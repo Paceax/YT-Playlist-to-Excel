@@ -4,12 +4,14 @@
 
 
 # necessary libraries: selenium, openpyxl
-import openpyxl
 from sys import exit
+from time import sleep
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
-from time import sleep
+import openpyxl
+from openpyxl import Workbook
+from openpyxl.styles import Font, PatternFill
 
 
 def check_input(url):
@@ -152,7 +154,7 @@ def search_for_point(list):
 
     for i in range(len(list)):
         if list[i] == point:
-            return [(i - 2), i]
+            return [(i - 2), (i - 1)]
 
 
 def get_information(driver, mode):
@@ -191,8 +193,6 @@ def get_information(driver, mode):
 
     for entry in vids:
         try:
-            print("-" * 20)
-            print(entry.text)
             new_entry = []
 
             entry_text = entry.text.splitlines()
@@ -200,9 +200,11 @@ def get_information(driver, mode):
             match mode:
                 case 0:
                     actualEntryText = search_for_point(entry_text)
-                    new_entry.append(entry_text[actualEntryText[0]:actualEntryText[1]])
+                    new_entry.append(entry_text[actualEntryText[0]])
+                    new_entry.append(entry_text[actualEntryText[1]])
                 case 1:
-                    new_entry.append(entry_text[0:2])
+                    new_entry.append(entry_text[0])
+                    new_entry.append(entry_text[1])
 
             try:
                 link_pos = entry.find_element(By.CLASS_NAME, actualLinkPos[mode])
@@ -220,13 +222,62 @@ def get_information(driver, mode):
 
     return entries
 
+
+def create_excel_with_table(data, filename):
+    # Ensure the filename has the correct extension
+    if not filename.endswith(".xlsx"):
+        filename += ".xlsx"
+
+    # Create a workbook and select the active worksheet
+    wb = Workbook()
+    ws = wb.active
+
+    # Define the headers
+    headers = ["Name", "Uploader", "Link"]
+
+    # Define styles
+    header_font = Font(size=14, bold=True)
+
+    # Write the headers to the first row with styling
+    for col_num, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col_num, value=header)
+        cell.font = header_font
+
+    # Write the data to the subsequent rows without alternating row colors
+    for row_num, row_data in enumerate(data, start=2):
+        for col_num, cell_value in enumerate(row_data, start=1):
+            ws.cell(row=row_num, column=col_num, value=cell_value)
+
+    # Set filters on the headers
+    ws.auto_filter.ref = ws.dimensions
+
+    # Adjust column widths
+    for col in ws.columns:
+        max_length = 0
+        column = col[0].column_letter  # Get the column name
+        for cell in col:
+            try:
+                if len(str(cell.value)) > max_length:
+                    max_length = len(cell.value)
+            except:
+                pass
+        adjusted_width = (max_length + 2)
+        ws.column_dimensions[column].width = adjusted_width
+
+    # Save the workbook to a file
+    wb.save(filename)
+    print(f"Data written to {filename}")
+
+
 def main():
     print("Welcome to YT-Playlist2Excel")
+    filename = input("Please enter a filename: ")
+
     while True:
         #url = input("Please input your playlist link, press -h for help or -q to quit: ")
         # Test URL
-        #url = "https://www.youtube.com/playlist?list=PLdxfyzVbTnHn_7pgh4twqXGQva2EgfnF7"
-        url = "https://www.youtube.com/playlist?list=PLdxfyzVbTnHl3sJ5mhYTULvKlj4q0HIDY"
+        url = "https://music.youtube.com/playlist?list=PLdxfyzVbTnHn_7pgh4twqXGQva2EgfnF7"
+        #url = "https://www.youtube.com/playlist?list=PLdxfyzVbTnHl3sJ5mhYTULvKlj4q0HIDY"
 
         mode = check_input(url)
         if mode < 5:
@@ -246,6 +297,7 @@ def main():
     driver.close()
 
     # Save in Excel
+    create_excel_with_table(entries, filename)
 
     print("Finished...")
 
