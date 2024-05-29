@@ -2,11 +2,8 @@
 # and writes the name, artist/uploder and link
 # into an new or existing Excel file
 
-# for song playlists replace the "www"
-# in the playlists link with "music"
-# to get better results
 
-# necessary libraries: bs4, openpyxl, requests
+# necessary libraries: selenium, openpyxl
 import openpyxl
 from sys import exit
 from selenium import webdriver
@@ -98,7 +95,6 @@ def get_normal_info(driver):
 
     return entries
 
-
 def get_music_info(driver):
     # Cookie & load complete page
     driver.find_element(By.XPATH, '/html/body/c-wiz/div/div/div/div[2]/div[1]/div[3]/div[1]/form[2]/div').click()
@@ -159,8 +155,7 @@ def search_for_point(list):
             return [(i - 2), i]
 
 
-
-def get_informations(driver, mode):
+def get_information(driver, mode):
 
     pathToResults = ["style-scope.ytd-playlist-video-list-renderer", "style-scope.ytmusic-playlist-shelf-renderer"]
     startOfActualResults = [4, 2]
@@ -244,7 +239,7 @@ def main():
 
     # Getting the information
 
-    entries = get_informations(driver, mode)
+    entries = get_information(driver, mode)
 
     print(entries)
     print(str(len(entries)) + " Videos found.")
